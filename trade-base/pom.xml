@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <kafka-version>3.9.0</kafka-version>
+        <kafka-version>4.2.0</kafka-version>
         <kryo-version>5.6.2</kryo-version>
     </properties>
 
