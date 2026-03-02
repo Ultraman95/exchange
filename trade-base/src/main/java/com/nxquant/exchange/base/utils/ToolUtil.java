@@ -1,6 +1,6 @@
 package com.nxquant.exchange.base.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.nxquant.exchange.base.entity.JsonType;
 

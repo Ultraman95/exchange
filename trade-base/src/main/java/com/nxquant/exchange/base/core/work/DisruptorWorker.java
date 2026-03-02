@@ -5,7 +5,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.nxquant.exchange.base.core.kafka.ExKafkaEvent;
 import com.nxquant.exchange.base.core.kafka.KafkaEvent;
 import com.nxquant.exchange.base.core.work.exception.DisruptorExceptionHandler;
-import io.micrometer.core.instrument.util.NamedThreadFactory;
+import com.nxquant.exchange.base.utils.NamedThreadFactory;
 
 public class DisruptorWorker extends AbstractWorker {
 

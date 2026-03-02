@@ -2,7 +2,7 @@ package com.nxquant.exchange.base.web;
 
 import com.nxquant.exchange.base.entity.UserBean;
 import com.nxquant.exchange.base.service.UserService;
-import io.micrometer.core.instrument.util.StringUtils;
+import org.springframework.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ public class TestController {
     @GetMapping(value = "/test")
     public String getHistoryKline(@RequestParam(value = "symbol") String symbol,
                                   HttpServletRequest request) {
-        if(!StringUtils.isEmpty(symbol)){
+        if(StringUtils.hasText(symbol)){
             return symbol;
         }
         return "error";

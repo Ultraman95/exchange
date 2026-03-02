@@ -41,7 +41,7 @@ public class PartitionWorker implements EventHandler<InputEventData> {
     private void initDisruptor(){
         int ringBufferSize = 1 << 15;
         TopicPartition tp = this.redoOffset.getTopicPartition();
-        this.disruptor = new Disruptor<>(InputEventData::new, ringBufferSize, new NamedThreadFactory(tp.topic() + "_" + tp.partition()));
+        this.disruptor = new Disruptor<>(InputEventData::new, ringBufferSize, new com.nxquant.exchange.base.utils.NamedThreadFactory(tp.topic() + "_" + tp.partition()));
         this.disruptor.handleEventsWith(this);
     }
 
