@@ -1,7 +1,0 @@
-    nginx.conf--diff
-    map $request_method $order_host {
-        default  http://192.168.1.22:9191/order;
-        GET      http://192.168.1.184:9292/order;
-    }
-    //key/value [$request_method/$order_host]，目前这个不起作用，可忽略
-
