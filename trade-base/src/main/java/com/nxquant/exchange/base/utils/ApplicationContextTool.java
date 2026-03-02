@@ -1,5 +1,7 @@
 package com.nxquant.exchange.base.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
 //注意，继承了ApplicationContextAware，setApplicationContext方法会被自动调用
 @Component
 public class ApplicationContextTool implements ApplicationContextAware {
+    private static final Logger logger = LoggerFactory.getLogger(ApplicationContextTool.class);
     /**
      * 上下文对象实例
      */
@@ -16,10 +19,8 @@ public class ApplicationContextTool implements ApplicationContextAware {
 
     @Override
     public void setApplicationContext(ApplicationContext appContext) throws BeansException {
-        System.out.println("$============>>>>> SetApplicationContext is triggered");
+        logger.info("SetApplicationContext is triggered, timestamp={}", System.currentTimeMillis());
         applicationContext = appContext;
-        System.out.println(System.currentTimeMillis());
-        System.out.println("============>>>>> End");
     }
 
     /**

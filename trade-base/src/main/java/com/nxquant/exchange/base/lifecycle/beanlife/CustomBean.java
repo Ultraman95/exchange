@@ -1,5 +1,7 @@
 package com.nxquant.exchange.base.lifecycle.beanlife;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -7,10 +9,11 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 public class CustomBean implements InitializingBean, DisposableBean {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
     private String name;
 
     public CustomBean() {
-        System.out.println("---调用Bean的函数(constructor)");
+        logger.info("---调用Bean的函数(constructor)");
     }
 
     public String getName() {
@@ -18,39 +21,39 @@ public class CustomBean implements InitializingBean, DisposableBean {
     }
 
     public void setName(String name) {
-        System.out.println("---调用Bean的函数(setName/setAttribute)");
+        logger.info("---调用Bean的函数(setName/setAttribute)");
         this.name = name;
     }
 
     @PostConstruct
     public void postConstruct(){
-        System.out.println("---调用Bean的函数(postConstruct)");
+        logger.info("---调用Bean的函数(postConstruct)");
     }
 
     //MainConfig中@Bean 的initMethod
     public void initMethod(){
-        System.out.println("---调用Bean的函数(initMethod)");
+        logger.info("---调用Bean的函数(initMethod)");
     }
 
     //InitializingBean接口的方法afterPropertiesSet
     @Override
     public void afterPropertiesSet() throws Exception {
-        System.out.println("---调用Bean的函数(afterPropertiesSet)");
+        logger.info("---调用Bean的函数(afterPropertiesSet)");
     }
 
     @PreDestroy
     public void preDestroy(){
-        System.out.println("---调用Bean的函数(preDestroy)");
+        logger.info("---调用Bean的函数(preDestroy)");
     }
 
     //DisposableBean接口的方法destroy
     @Override
     public void destroy() throws Exception {
-        System.out.println("---调用Bean的函数(destroy)");
+        logger.info("---调用Bean的函数(destroy)");
     }
 
     //MainConfig中@Bean的destroyMethod
     public void destroyMethod(){
-        System.out.println("---调用Bean的函数(destroyMethod)");
+        logger.info("---调用Bean的函数(destroyMethod)");
     }
 }

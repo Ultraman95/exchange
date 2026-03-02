@@ -16,7 +16,7 @@ public enum OrderStatus implements Serializable {
     //全部撤单
     OS_CANCELED("canceled", 3),
     //全部成交
-    OS_FILLED("maker", 4),
+    OS_FILLED("filled", 4),
     //拒绝
     OS_REJECTED("rejected", 5);
 

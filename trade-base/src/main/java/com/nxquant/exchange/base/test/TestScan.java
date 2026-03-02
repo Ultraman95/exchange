@@ -2,6 +2,8 @@ package com.nxquant.exchange.base.test;
 
 import com.nxquant.exchange.base.entity.MemoryStorage;
 import com.nxquant.exchange.base.lifecycle.beanlife.CustomBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -10,12 +12,11 @@ import jakarta.annotation.PostConstruct;
 
 @Configuration
 public class TestScan {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct
     void run(){
-        System.out.println("$============>>>>> PostConstruct is triggered");
-        System.out.println(System.currentTimeMillis());
-        System.out.println("============>>>>> End");
+        logger.info("PostConstruct is triggered, timestamp={}", System.currentTimeMillis());
     }
 
     //@Bean是作用在方法上的注解
@@ -23,7 +24,7 @@ public class TestScan {
     @Lazy
     @Bean(initMethod = "initMethod", destroyMethod = "destroyMethod")
     public CustomBean customBean(){
-        System.out.println("Load CustomBean:");
+        logger.info("Load CustomBean");
         return new CustomBean();
     }
 

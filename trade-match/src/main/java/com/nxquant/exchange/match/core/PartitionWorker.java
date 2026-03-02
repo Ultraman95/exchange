@@ -49,6 +49,12 @@ public class PartitionWorker implements EventHandler<InputEventData> {
         this.disruptor.start();
     }
 
+    void stop(){
+        if (disruptorStartStatus) {
+            this.disruptor.shutdown();
+        }
+    }
+
 
     @Override
     public void onEvent(InputEventData eData, long sequence, boolean endOfBatch) {

@@ -35,14 +35,12 @@ public class TestUtil {
         PriorityQueue<Order> buyOrders = new PriorityQueue<>(new Comparator<Order>() {
             @Override
             public int compare(Order o1, Order o2) {
-                if (o1.getComPrice() < o2.getComPrice()) {
-                    return 1;
-                } else if (o1.getComPrice() > o2.getComPrice()) {
-                    return -1;
-                } else {
-                    long x = o1.getCreateTs() - o2.getCreateTs() != 0 ? (o1.getCreateTs() - o2.getCreateTs()) : (o1.getIncId() - o2.getIncId());
-                    return (int)x;
+                int cmp = Long.compare(o2.getComPrice(), o1.getComPrice());
+                if (cmp != 0) {
+                    return cmp;
                 }
+                cmp = Long.compare(o1.getCreateTs(), o2.getCreateTs());
+                return cmp != 0 ? cmp : Long.compare(o1.getIncId(), o2.getIncId());
             }
         });
 
@@ -66,7 +64,7 @@ public class TestUtil {
                 orderMap.put(order.getOrderId(), order);
             }
         }
-        System.out.println("TotalTs1 :" + (System.currentTimeMillis() - bt));
+        logger.info("TotalTs1 :{}", System.currentTimeMillis() - bt);
 
         long totalTs = 0;
         for(int i = 0 ; i < 1000 ; i++){
@@ -76,7 +74,7 @@ public class TestUtil {
             buyOrders.remove(orderMap.get(id));
             totalTs += (System.currentTimeMillis() -bt);
         }
-        System.out.println("TotalTs2 :" + totalTs);
+        logger.info("TotalTs2 :{}", totalTs);
     }
 
     public void testTreeMap() {
@@ -84,13 +82,7 @@ public class TestUtil {
         TreeMap<Long,Order> buyOrders = new TreeMap<>(new Comparator<Long>() {
             @Override
             public int compare(Long p1, Long p2) {
-                if(p1 < p2){
-                    return 1;
-                }else if(p1 > p2){
-                    return -1;
-                }else {
-                    return 0;
-                }
+                return Long.compare(p2, p1);
             }
         });
         AtomicLong incLong = new AtomicLong(0);
@@ -112,7 +104,7 @@ public class TestUtil {
                 buyOrders.put(order.getOrderId(), order);
             }
         }
-        System.out.println("TotalTs1 :" + (System.currentTimeMillis() - bt));
+        logger.info("TotalTs1 :{}", System.currentTimeMillis() - bt);
 
         for (Map.Entry<Long, Order> entry : buyOrders.entrySet()) {
             Order order = entry.getValue();
@@ -126,7 +118,7 @@ public class TestUtil {
             buyOrders.remove(id);
             totalTs += (System.currentTimeMillis() -bt);
         }
-        System.out.println("TotalTs2 :" + totalTs);
+        logger.info("TotalTs2 :{}", totalTs);
     }
 
     public void testUserRegister(){

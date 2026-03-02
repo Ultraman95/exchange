@@ -8,11 +8,11 @@ import java.io.Serializable;
  */
 public enum MblOpType implements Serializable {
     //增加
-    MOT_ADD("buy", 0),
+    MOT_ADD("add", 0),
     //删除
-    MOT_REMOVE("sell", 1),
+    MOT_REMOVE("remove", 1),
     //更新
-    MOT_UPDATE("sell", 2);
+    MOT_UPDATE("update", 2);
 
     private String key;
     private int value;

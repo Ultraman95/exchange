@@ -23,8 +23,8 @@ public class PriceBook implements Info {
         orderSet =new TreeSet<>(new Comparator<Order>() {
             @Override
             public int compare(Order o1, Order o2) {
-                long compareValue = o1.getCreateTs() - o2.getCreateTs() != 0 ? (o1.getCreateTs() - o2.getCreateTs()) : (o1.getIncId() - o2.getIncId());
-                return (int)compareValue;
+                int cmp = Long.compare(o1.getCreateTs(), o2.getCreateTs());
+                return cmp != 0 ? cmp : Long.compare(o1.getIncId(), o2.getIncId());
             }
         });
     }

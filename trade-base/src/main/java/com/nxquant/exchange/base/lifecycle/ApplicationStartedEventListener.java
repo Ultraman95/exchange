@@ -5,6 +5,8 @@ import com.nxquant.exchange.base.core.work.WorkerContext;
 import com.nxquant.exchange.base.core.work.WorkerManager;
 import com.nxquant.exchange.base.core.work.WorkerManagerService;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -15,15 +17,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ApplicationStartedEventListener implements ApplicationListener<ApplicationStartedEvent> {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private WorkerManager workerManager;
     private MeterRegistry meterRegistry;
 
     @Override
     public void onApplicationEvent(ApplicationStartedEvent applicationStartedEvent) {
-        System.out.println("$============>>>>> ApplicationStartedEvent is triggered");
-        System.out.println(applicationStartedEvent.getTimestamp());
-        System.out.println("============>>>>> End");
+        logger.info("ApplicationStartedEvent is triggered, timestamp={}", applicationStartedEvent.getTimestamp());
         initApplication(applicationStartedEvent.getApplicationContext());
     }
 

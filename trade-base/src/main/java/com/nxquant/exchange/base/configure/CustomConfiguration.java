@@ -1,5 +1,7 @@
 package com.nxquant.exchange.base.configure;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -11,6 +13,7 @@ import java.util.Properties;
 
 @Configuration
 public class CustomConfiguration {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
     private final String PREFIX = "com.nxquant.exchange";
 
     private String inputTopic;
@@ -26,9 +29,7 @@ public class CustomConfiguration {
     @Bean
     @ConfigurationProperties(prefix = PREFIX + ".global")
     public CustomConfiguration loadProperties(Environment environment) {
-        System.out.println("$============>>>>> Configuration is triggered");
-        System.out.println(System.currentTimeMillis());
-        System.out.println("============>>>>> End");
+        logger.info("Configuration is triggered, timestamp={}", System.currentTimeMillis());
         return this;
     }
 

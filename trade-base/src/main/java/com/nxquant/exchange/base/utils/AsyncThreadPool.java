@@ -1,5 +1,7 @@
 package com.nxquant.exchange.base.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
@@ -18,6 +20,7 @@ import java.util.concurrent.Executor;
 @Configuration
 @EnableAsync
 public class AsyncThreadPool implements AsyncConfigurer {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public Executor getAsyncExecutor() {
@@ -40,7 +43,7 @@ public class AsyncThreadPool implements AsyncConfigurer {
         //taskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         // 初始化
         taskExecutor.initialize();
-        System.out.println("------------->>>开启异步线程池");
+        logger.info("开启异步线程池");
         return taskExecutor;
     }
 
@@ -53,7 +56,7 @@ public class AsyncThreadPool implements AsyncConfigurer {
         //手动处理捕获的异常
         @Override
         public void handleUncaughtException(Throwable throwable, Method method, Object... params) {
-            System.out.println("------------->>>捕获线程异常信息");
+            logger.error("捕获线程异常信息, method={}", method.getName(), throwable);
         }
     }
 }

@@ -240,7 +240,7 @@ public class MainWorker implements ConsumerRebalanceListener{
         String workerKey = inputTp.topic() + "_" + inputTp.partition();
         if (!kpWorkMap.containsKey(workerKey)) {
             RedoOffset redoOffset = redoOffsetMap.get(inputTp);
-            List<ExOrderBook> exOrderBookList = baseExOrderBookMap.get(inputTp);
+            List<ExOrderBook> exOrderBookList = baseExOrderBookMap.getOrDefault(inputTp, Collections.emptyList());
             kpWorker = new PartitionWorker(redoOffset, exOrderBookList, workContext);
             kpWorkMap.put(workerKey, kpWorker);
             kpWorker.start();
@@ -250,5 +250,28 @@ public class MainWorker implements ConsumerRebalanceListener{
 
     public void setMainWorkerStop(boolean stop) {
         isStop = stop;
+        if (stop) {
+            shutdown();
+        }
+    }
+
+    private void shutdown() {
+        // 关闭所有 PartitionWorker 的 Disruptor
+        for (Map.Entry<String, PartitionWorker> entry : kpWorkMap.entrySet()) {
+            try {
+                entry.getValue().stop();
+            } catch (Exception e) {
+                logger.error("Match_ERROR: shutdown PartitionWorker failure, key={}", entry.getKey(), e);
+            }
+        }
+        kpWorkMap.clear();
+        // 关闭 inputConsumer
+        if (inputConsumer != null) {
+            try {
+                inputConsumer.close();
+            } catch (Exception e) {
+                logger.error("Match_ERROR: close inputConsumer failure!", e);
+            }
+        }
     }
 }

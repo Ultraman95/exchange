@@ -21,7 +21,7 @@ public class TestController {
     private UserService userService;
 
     public TestController(){
-        System.out.println("***********构造函数注入***********");
+        logger.info("构造函数注入");
     }
 
     @GetMapping(value = "/test")

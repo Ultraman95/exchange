@@ -1,5 +1,7 @@
 package com.nxquant.exchange.base.lifecycle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -8,10 +10,10 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(1)
 public class CommandRunner implements CommandLineRunner {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("$============>>>>> CommandRunner is triggered");
-        System.out.println(System.currentTimeMillis());
-        System.out.println("============>>>>> End");
+        logger.info("CommandRunner is triggered, timestamp={}", System.currentTimeMillis());
     }
 }

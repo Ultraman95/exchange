@@ -2,6 +2,8 @@ package com.nxquant.exchange.base.service;
 
 import com.nxquant.exchange.base.entity.UserBean;
 import com.nxquant.exchange.base.service.event.UserRegisterEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     ApplicationContext applicationContext;
 
@@ -47,7 +51,7 @@ public class UserService {
             //省略逻辑
 
             //输出注册用户信息
-            System.out.println("@EventListener---注册信息，用户名："+user.getName()+"，密码："+user.getPassword());
+            logger.info("@EventListener---注册信息，用户名：{}，密码：{}", user.getName(), user.getPassword());
         }
     }
 
@@ -61,7 +65,7 @@ public class UserService {
         @EventListener
         public void sendMail(UserRegisterEvent userRegisterEvent)
         {
-            System.out.println("@EventListener---用户注册成功，发送邮件。");
+            logger.info("@EventListener---用户注册成功，发送邮件。");
         }
     }
 
@@ -83,7 +87,7 @@ public class UserService {
                 //省略逻辑
 
                 //输出注册用户信息
-                System.out.println("继承---注册信息，用户名：" + user.getName() + "，密码：" + user.getPassword());
+                logger.info("继承---注册信息，用户名：{}，密码：{}", user.getName(), user.getPassword());
             }
         }
     }
@@ -129,7 +133,7 @@ public class UserService {
             //获取注册用户对象信息
             UserBean user = userRegisterEvent.getUser();
             //省略逻辑
-            System.out.println("有序监听---注册信息，用户名："+user.getName()+"，密码："+user.getPassword());
+            logger.info("有序监听---注册信息，用户名：{}，密码：{}", user.getName(), user.getPassword());
         }
 
         /**
@@ -158,7 +162,7 @@ public class UserService {
         }
 
         /**
-         * 该方法返回true&supportsEventType同样返回true时，才会调用该监听内的onApplicationEvent方法
+         * 该方法返回true&supportsSourceType同样返回true时，才会调用该监听内的onApplicationEvent方法
          *
          * @param aClass
          * @return
@@ -180,7 +184,7 @@ public class UserService {
             UserRegisterEvent userRegisterEvent = (UserRegisterEvent) applicationEvent;
             //获取注册用户对象信息
             UserBean user = userRegisterEvent.getUser();
-            System.out.println("有序监听---用户：" + user.getName() + "，注册成功，发送邮件通知。");
+            logger.info("有序监听---用户：{}，注册成功，发送邮件通知。", user.getName());
         }
 
         /**
@@ -197,12 +201,13 @@ public class UserService {
 
     @Async
     public String printAsync(){
-        System.out.println("线程名称："+Thread.currentThread().getName() + " be ready to read data!");
+        logger.info("线程名称：{} be ready to read data!", Thread.currentThread().getName());
         try {
             Thread.sleep(1000 * 1);
-            System.out.println("--------------------->>>无返回值延迟3秒：");
+            logger.info("--------------------->>>无返回值延迟3秒：");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("printAsync interrupted", e);
+            Thread.currentThread().interrupt();
         }
         return "已进入到异步";
     }

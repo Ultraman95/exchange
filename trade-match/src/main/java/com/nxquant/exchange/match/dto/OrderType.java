@@ -12,7 +12,7 @@ public enum OrderType implements Serializable {
     //撤单
     OT_CANCEL("cancel", 1),
     //改单
-    OT_UPDATE("cancel", 2);
+    OT_UPDATE("update", 2);
 
 
     private String key;

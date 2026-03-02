@@ -22,8 +22,8 @@ public class OrderBook {
                 } else if (o1.getComPrice() > o2.getComPrice()) {
                     return -1;
                 } else {
-                    long compareValue = o1.getCreateTs() - o2.getCreateTs() != 0 ? (o1.getCreateTs() - o2.getCreateTs()) : (o1.getIncId() - o2.getIncId());
-                    return (int)compareValue;
+                    int cmp = Long.compare(o1.getCreateTs(), o2.getCreateTs());
+                    return cmp != 0 ? cmp : Long.compare(o1.getIncId(), o2.getIncId());
                 }
             }
         });
@@ -35,8 +35,8 @@ public class OrderBook {
                 } else if (o1.getComPrice() > o2.getComPrice()) {
                     return 1;
                 } else {
-                    long compareValue = o1.getCreateTs() - o2.getCreateTs() != 0 ? (o1.getCreateTs() - o2.getCreateTs()) : (o1.getIncId() - o2.getIncId());
-                    return (int)compareValue;
+                    int cmp = Long.compare(o1.getCreateTs(), o2.getCreateTs());
+                    return cmp != 0 ? cmp : Long.compare(o1.getIncId(), o2.getIncId());
                 }
             }
         });
