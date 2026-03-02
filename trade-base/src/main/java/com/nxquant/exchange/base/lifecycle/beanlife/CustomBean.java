@@ -3,8 +3,8 @@ package com.nxquant.exchange.base.lifecycle.beanlife;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 public class CustomBean implements InitializingBean, DisposableBean {
     private String name;
