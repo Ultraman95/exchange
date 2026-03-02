@@ -17,8 +17,7 @@
     <properties>
         <java.version>17</java.version>
         <kafka-version>3.9.0</kafka-version>
-        <kryo-serializers-version>0.45</kryo-serializers-version>
-        <kryo-version>4.0.2</kryo-version>
+        <kryo-version>5.6.2</kryo-version>
     </properties>
 
     <dependencies>
@@ -89,11 +88,6 @@
             <version>${kryo-version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>de.javakaffee</groupId>
-            <artifactId>kryo-serializers</artifactId>
-            <version>${kryo-serializers-version}</version>
-        </dependency>
     </dependencies>
 
     <build>
