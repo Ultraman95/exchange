@@ -1,7 +1,6 @@
 package com.nxquant.exchange.match.core;
 
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.nxquant.exchange.match.configure.WorkContext;
 import com.nxquant.exchange.match.dto.*;
@@ -19,7 +18,7 @@ import java.util.List;
  * @author shilf
  * kafka-partition消费线程
  */
-public class PartitionWorker implements EventHandler<InputEventData>, LifecycleAware {
+public class PartitionWorker implements EventHandler<InputEventData> {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private RedoOffset redoOffset;
