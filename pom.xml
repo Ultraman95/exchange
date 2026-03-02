@@ -7,7 +7,7 @@
     <artifactId>exchange</artifactId>
     <groupId>com.nxquant.exchange</groupId>
     <packaging>pom</packaging>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
 
     <modules>
         <module>trade-base</module>
