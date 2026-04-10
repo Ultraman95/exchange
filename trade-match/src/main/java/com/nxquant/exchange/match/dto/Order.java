@@ -9,16 +9,17 @@ import java.math.BigDecimal;
 public class Order implements Info {
 
     private String instrumentId;
+    private int instrumentIndex;
 
-    private Long orderId;
+    private long orderId;
 
     private String orderLocalId;
 
-    private Long comPrice;
+    private long comPrice;
 
     private BigDecimal price;
 
-    private Long volume;
+    private long volume;
 
     private OrderPriceType priceType;
 
@@ -32,9 +33,9 @@ public class Order implements Info {
 
     private OrderStatus orderStatus;
 
-    private Long tradedVolume;
+    private long tradedVolume;
 
-    private Long displayVolume;
+    private long displayVolume;
 
     private OrderPurposeType purposeType;
 
@@ -44,40 +45,41 @@ public class Order implements Info {
 
     private Long maxBoundPrice;
 
-    private Long inputTs;
+    private long inputTs;
 
-    private Long createTs;
+    private long createTs;
 
-    private Long updateTs;
+    private long updateTs;
 
-    private Long incId;
+    private long incId;
 
     public Order(){}
 
     @Override
-    public boolean equals(Object order) {
-        Order tmpOrder = (Order)order;
-        return this.orderId.equals(tmpOrder.getOrderId());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Order)) return false;
+        return this.orderId == ((Order) o).orderId;
     }
 
     @Override
     public int hashCode() {
-        return orderId.hashCode();
+        return Long.hashCode(orderId);
     }
 
-    public Long getOrderId() {
+    public long getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(Long orderId) {
+    public void setOrderId(long orderId) {
         this.orderId = orderId;
     }
 
-    public Long getIncId() {
+    public long getIncId() {
         return incId;
     }
 
-    public void setIncId(Long incId) {
+    public void setIncId(long incId) {
         this.incId = incId;
     }
 
@@ -89,11 +91,19 @@ public class Order implements Info {
         this.instrumentId = instrumentId;
     }
 
-    public Long getComPrice() {
+    public int getInstrumentIndex() {
+        return instrumentIndex;
+    }
+
+    public void setInstrumentIndex(int instrumentIndex) {
+        this.instrumentIndex = instrumentIndex;
+    }
+
+    public long getComPrice() {
         return comPrice;
     }
 
-    public void setComPrice(Long comPrice) {
+    public void setComPrice(long comPrice) {
         this.comPrice = comPrice;
     }
 
@@ -105,19 +115,19 @@ public class Order implements Info {
         this.price = price;
     }
 
-    public Long getCreateTs() {
+    public long getCreateTs() {
         return createTs;
     }
 
-    public void setCreateTs(Long createTs) {
+    public void setCreateTs(long createTs) {
         this.createTs = createTs;
     }
 
-    public Long getVolume() {
+    public long getVolume() {
         return volume;
     }
 
-    public void setVolume(Long volume) {
+    public void setVolume(long volume) {
         this.volume = volume;
     }
 
@@ -161,11 +171,11 @@ public class Order implements Info {
         this.orderType = orderType;
     }
 
-    public Long getInputTs() {
+    public long getInputTs() {
         return inputTs;
     }
 
-    public void setInputTs(Long inputTs) {
+    public void setInputTs(long inputTs) {
         this.inputTs = inputTs;
     }
 
@@ -177,19 +187,19 @@ public class Order implements Info {
         this.clientId = clientId;
     }
 
-    public Long getTradedVolume() {
+    public long getTradedVolume() {
         return tradedVolume;
     }
 
-    public void setTradedVolume(Long tradedVolume) {
+    public void setTradedVolume(long tradedVolume) {
         this.tradedVolume = tradedVolume;
     }
 
-    public Long getDisplayVolume() {
+    public long getDisplayVolume() {
         return displayVolume;
     }
 
-    public void setDisplayVolume(Long displayVolume) {
+    public void setDisplayVolume(long displayVolume) {
         this.displayVolume = displayVolume;
     }
 
@@ -217,11 +227,11 @@ public class Order implements Info {
         this.orderStatus = orderStatus;
     }
 
-    public Long getUpdateTs() {
+    public long getUpdateTs() {
         return updateTs;
     }
 
-    public void setUpdateTs(Long updateTs) {
+    public void setUpdateTs(long updateTs) {
         this.updateTs = updateTs;
     }
 

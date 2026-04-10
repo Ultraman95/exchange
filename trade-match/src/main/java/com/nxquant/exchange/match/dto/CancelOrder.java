@@ -1,24 +1,25 @@
 package com.nxquant.exchange.match.dto;
 
 public class CancelOrder implements Info {
-    private Long orderId;
+    private long orderId;
 
-    public Long getOrderId() {
+    public long getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(Long orderId) {
+    public void setOrderId(long orderId) {
         this.orderId = orderId;
     }
 
     @Override
-    public boolean equals(Object order) {
-        CancelOrder tmpOrder = (CancelOrder)order;
-        return this.orderId.equals(tmpOrder.getOrderId());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CancelOrder)) return false;
+        return this.orderId == ((CancelOrder) o).orderId;
     }
 
     @Override
     public int hashCode() {
-        return orderId.hashCode();
+        return Long.hashCode(orderId);
     }
 }

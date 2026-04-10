@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 
@@ -14,8 +15,20 @@ import java.util.TreeMap;
  */
 @Service
 public class MatchServiceImpl implements MatchService {
+    private static final int MAX_MATCH_DEPTH = 1024;
+
     private OrderBookManager orderBookManager = new OrderBookManager();
     private List<IRtnInfo> rtnInfoList = new ArrayList<>();
+
+    // 预分配MatchInfo数组，避免每次撮合new
+    private final MatchInfo[] matchInfoPool = new MatchInfo[MAX_MATCH_DEPTH];
+    private int matchCount;
+
+    {
+        for (int i = 0; i < MAX_MATCH_DEPTH; i++) {
+            matchInfoPool[i] = new MatchInfo();
+        }
+    }
 
     @Override
     public void initOrderBookManager(List<ExOrderBook> exOrderBookList){
@@ -34,13 +47,13 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public void insertOrder(Order order, boolean isRedo){
-        TreeMap<Long, PriceBook> partyOrders = orderBookManager.getPartyOrders(order.getInstrumentId(), order.getDirection());
+        TreeMap<Long, PriceBook> partyOrders = orderBookManager.getPartyOrders(order.getInstrumentIndex(), order.getDirection());
         if(partyOrders == null || partyOrders.isEmpty()){
             IRtnInfo rtnInfo = null;
             if(order.getPriceType() == OrderPriceType.OPT_LIMIT){
                 if(order.getTimeCondition() == TimeConditionType.TCT_GTC){
                     orderBookManager.addOrderToExOrderBookMap(order);
-                    orderBookManager.addOrderToCacheOrderMap(order);
+
                     rtnInfo = new RtnOrder();
                 }else if(order.getTimeCondition() == TimeConditionType.TCT_IOC){
                     //打回
@@ -55,23 +68,30 @@ public class MatchServiceImpl implements MatchService {
             }
         }else {
             long orderRemainVolume = order.getVolume();
-            List<MatchInfo> matchInfoList = new ArrayList<>();
-            for (PriceBook priceBook : partyOrders.values()) {
-                for(Order partyOrder : priceBook.getOrderSet()) {
+            matchCount = 0;
+            boolean matchDone = false;
+            Map.Entry<Long, PriceBook> entry = partyOrders.firstEntry();
+            while (entry != null && !matchDone) {
+                OrderNode node = entry.getValue().getOrders().getHead();
+                while (node != null) {
+                    Order partyOrder = node.order;
                     if (!isMatch(order, partyOrder)) {
+                        matchDone = true;
                         break;
                     }
                     orderRemainVolume -= (partyOrder.getVolume() - partyOrder.getTradedVolume());
-                    MatchInfo matchInfo = new MatchInfo();
-                    matchInfoList.add(matchInfo);
+                    MatchInfo matchInfo = matchInfoPool[matchCount++];
                     matchInfo.setMatchOrder(partyOrder);
                     if (orderRemainVolume <= 0) {
                         matchInfo.setRemainVolume(-orderRemainVolume);
                         orderRemainVolume = 0;
+                        matchDone = true;
                         break;
                     }
                     matchInfo.setRemainVolume(0);
+                    node = node.next;
                 }
+                entry = partyOrders.higherEntry(entry.getKey());
             }
 
             if (order.getPriceType() == OrderPriceType.OPT_LIMIT && order.getTimeCondition() == TimeConditionType.TCT_FOK && orderRemainVolume > 0 ) {
@@ -96,7 +116,7 @@ public class MatchServiceImpl implements MatchService {
                 if (order.getPriceType() == OrderPriceType.OPT_LIMIT) {
                     //没有匹配，插入订单簿
                     orderBookManager.addOrderToExOrderBookMap(order);
-                    orderBookManager.addOrderToCacheOrderMap(order);
+
                     rtnInfo = new RtnOrder();
                 } else if (order.getPriceType() == OrderPriceType.OPT_MARKET) {
                     //没有匹配
@@ -107,14 +127,18 @@ public class MatchServiceImpl implements MatchService {
                 }
             }
 
-            for (MatchInfo matchInfo : matchInfoList) {
+            for (int i = 0; i < matchCount; i++) {
+                MatchInfo matchInfo = matchInfoPool[i];
                 Order matchOrder = matchInfo.getMatchOrder();
                 if (matchInfo.getRemainVolume() > 0) {
+                    long filledVolume = matchOrder.getVolume() - matchOrder.getTradedVolume() - matchInfo.getRemainVolume();
                     matchOrder.setTradedVolume(matchOrder.getVolume() - matchInfo.getRemainVolume());
                     matchOrder.setOrderStatus(OrderStatus.OS_PARTFILLED);
+                    orderBookManager.updatePriceBookVolume(matchOrder, -filledVolume);
                 } else {
                     orderBookManager.removeOrderFromExOrderBookMap(matchOrder);
-                    orderBookManager.removeOrderFromCacheOrderMap(matchOrder);
+        
+                    matchOrder.setOrderStatus(OrderStatus.OS_FILLED);
                 }
                 if(!isRedo) {
                     RtnTrade partyRtnTrade = new RtnTrade();
@@ -132,7 +156,7 @@ public class MatchServiceImpl implements MatchService {
                         //部分成交，其余插入订单簿
                         order.setOrderStatus(OrderStatus.OS_PARTFILLED);
                         orderBookManager.addOrderToExOrderBookMap(order);
-                        orderBookManager.addOrderToCacheOrderMap(order);
+    
                     }
                 } else if (order.getTimeCondition() == TimeConditionType.TCT_IOC) {
                     //部分成交，其余撤单
@@ -153,7 +177,7 @@ public class MatchServiceImpl implements MatchService {
         if(orderBookManager.cacheOrderMapContainsOrder(orderId)){
             Order order = orderBookManager.getOrderFromCacheOrderMap(orderId);
             orderBookManager.removeOrderFromExOrderBookMap(order);
-            orderBookManager.removeOrderFromCacheOrderMap(order);
+
         }else{
             //订单不存在
         }
@@ -165,8 +189,21 @@ public class MatchServiceImpl implements MatchService {
         long orderId = updateOrder.getOrderId();
         if(orderBookManager.cacheOrderMapContainsOrder(orderId)){
             Order order = orderBookManager.getOrderFromCacheOrderMap(orderId);
-            orderBookManager.removeOrderFromExOrderBookMap(order);
-            insertOrder(order, isRedo);
+            boolean priceChanged = updateOrder.getNewComPrice() != null
+                    && updateOrder.getNewComPrice() != order.getComPrice();
+            if (priceChanged) {
+                orderBookManager.removeOrderFromExOrderBookMap(order);
+                order.setComPrice(updateOrder.getNewComPrice());
+                if (updateOrder.getNewVolume() != null) {
+                    order.setVolume(updateOrder.getNewVolume());
+                }
+                insertOrder(order, isRedo);
+            } else if (updateOrder.getNewVolume() != null) {
+                long oldRemain = order.getVolume() - order.getTradedVolume();
+                order.setVolume(updateOrder.getNewVolume());
+                long newRemain = order.getVolume() - order.getTradedVolume();
+                orderBookManager.updatePriceBookVolume(order, newRemain - oldRemain);
+            }
         }else{
             //订单不存在
         }

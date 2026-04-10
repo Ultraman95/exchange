@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * @author shilf
@@ -41,7 +42,13 @@ public class PartitionWorker implements EventHandler<InputEventData> {
     private void initDisruptor(){
         int ringBufferSize = 1 << 15;
         TopicPartition tp = this.redoOffset.getTopicPartition();
-        this.disruptor = new Disruptor<>(InputEventData::new, ringBufferSize, new com.nxquant.exchange.base.utils.NamedThreadFactory(tp.topic() + "_" + tp.partition()));
+        String namePrefix = tp.topic() + "_" + tp.partition();
+        ThreadFactory threadFactory = r -> {
+            Thread t = new Thread(r, namePrefix);
+            t.setDaemon(true);
+            return t;
+        };
+        this.disruptor = new Disruptor<>(InputEventData::new, ringBufferSize, threadFactory);
         this.disruptor.handleEventsWith(this);
     }
 

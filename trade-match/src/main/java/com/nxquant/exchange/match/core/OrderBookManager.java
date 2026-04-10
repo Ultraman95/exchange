@@ -1,6 +1,7 @@
 package com.nxquant.exchange.match.core;
 
 import com.nxquant.exchange.match.dto.*;
+import org.agrona.collections.Long2ObjectHashMap;
 
 import java.util.*;
 
@@ -9,42 +10,66 @@ import java.util.*;
  * 订单簿管理器
  */
 public class OrderBookManager {
-    private Map<String, ExOrderBook> exOrderBookMap = new HashMap<>();
-    private Map<Long, Order> cacheOrderMap = new HashMap<>();
+    private static final int DEFAULT_POOL_CAPACITY = 1 << 20; // 100万
+    private static final int MAX_INSTRUMENTS = 1024;
+
+    private final ExOrderBook[] exOrderBooks = new ExOrderBook[MAX_INSTRUMENTS];
+    private final Map<String, Integer> instrumentIndexMap = new HashMap<>();
+    private int instrumentCount = 0;
+
+    private Long2ObjectHashMap<OrderNode> cacheOrderMap = new Long2ObjectHashMap<>();
+    private OrderNodePool nodePool;
+
+    public OrderBookManager() {
+        this(DEFAULT_POOL_CAPACITY);
+    }
+
+    public OrderBookManager(int poolCapacity) {
+        this.nodePool = new OrderNodePool(poolCapacity);
+    }
+
+    int getOrCreateInstrumentIndex(String instrumentId) {
+        Integer idx = instrumentIndexMap.get(instrumentId);
+        if (idx != null) return idx;
+        int newIdx = instrumentCount++;
+        instrumentIndexMap.put(instrumentId, newIdx);
+        return newIdx;
+    }
 
     void init(List<ExOrderBook> exOrderBookList){
         if(exOrderBookList != null) {
             for (ExOrderBook exOrderBook : exOrderBookList) {
-                addExOrderBookToOrderBookMap(exOrderBook);
+                int idx = getOrCreateInstrumentIndex(exOrderBook.getInstrumentId());
+                exOrderBook.setInstrumentIndex(idx);
+                exOrderBooks[idx] = exOrderBook;
                 addExOrderBookToCacheOrderMap(exOrderBook);
             }
         }
     }
 
-    private void addExOrderBookToOrderBookMap(ExOrderBook exOrderBook){
-        exOrderBookMap.put(exOrderBook.getInstrumentId(), exOrderBook);
-    }
-
     private void addExOrderBookToCacheOrderMap(ExOrderBook exOrderBook){
         if(exOrderBook.getOrderBook() != null) {
-            for(PriceBook priceBook : exOrderBook.getOrderBook().getBuyOrders().values()){
-                for(Order order : priceBook.getOrderSet()){
-                    cacheOrderMap.put(order.getOrderId(), order);
-                }
-            }
-            for(PriceBook priceBook : exOrderBook.getOrderBook().getSellOrders().values()){
-                for(Order order : priceBook.getOrderSet()){
-                    cacheOrderMap.put(order.getOrderId(), order);
-                }
+            cacheOrdersFromSide(exOrderBook.getOrderBook().getBuyOrders());
+            cacheOrdersFromSide(exOrderBook.getOrderBook().getSellOrders());
+        }
+    }
+
+    private void cacheOrdersFromSide(TreeMap<Long, PriceBook> side){
+        for(PriceBook priceBook : side.values()){
+            OrderNode node = priceBook.getOrders().getHead();
+            while(node != null){
+                cacheOrderMap.put(node.getOrder().getOrderId(), node);
+                node = node.next;
             }
         }
     }
 
     void addOrderToExOrderBookMap(Order order){
-        ExOrderBook exOrderBook = exOrderBookMap.get(order.getInstrumentId());
+        int idx = order.getInstrumentIndex();
+        ExOrderBook exOrderBook = exOrderBooks[idx];
         if(exOrderBook == null){
-            exOrderBook = new ExOrderBook(order.getInstrumentId());
-            exOrderBookMap.put(order.getInstrumentId(), exOrderBook);
+            exOrderBook = new ExOrderBook(order.getInstrumentId(), idx);
+            exOrderBooks[idx] = exOrderBook;
         }
         OrderBook orderBook = exOrderBook.getOrderBook();
         if(orderBook == null){
@@ -63,12 +88,10 @@ public class OrderBookManager {
             priceBook.setPrice(order.getComPrice());
             relatedOrders.put(order.getComPrice(), priceBook);
         }
-        priceBook.getOrderSet().add(order);
+        OrderNode node = nodePool.acquire(order);
+        priceBook.getOrders().addLast(node);
         priceBook.setReallyVolume(priceBook.getReallyVolume() + order.getVolume() - order.getTradedVolume());
-    }
-
-    void addOrderToCacheOrderMap(Order order){
-        cacheOrderMap.put(order.getOrderId(), order);
+        cacheOrderMap.put(order.getOrderId(), node);
     }
 
     boolean cacheOrderMapContainsOrder(long orderId){
@@ -76,51 +99,65 @@ public class OrderBookManager {
     }
 
     Order getOrderFromCacheOrderMap(long orderId){
-        return cacheOrderMap.get(orderId);
+        OrderNode node = cacheOrderMap.get(orderId);
+        return node != null ? node.getOrder() : null;
     }
 
     void removeOrderFromExOrderBookMap(Order order){
-        ExOrderBook exOrderBook = exOrderBookMap.get(order.getInstrumentId());
-        if(exOrderBook != null){
-            TreeMap<Long, PriceBook> relatedOrders;
-            OrderBook orderBook = exOrderBook.getOrderBook();
-            if(orderBook != null) {
-                if (order.getDirection() == DirectionType.DT_BUY) {
-                    relatedOrders = orderBook.getBuyOrders();
-                } else {
-                    relatedOrders = orderBook.getSellOrders();
-                }
-                PriceBook priceBook = relatedOrders.get(order.getComPrice());
-                if(priceBook != null) {
-                    priceBook.getOrderSet().remove(order);
-                    if (priceBook.getOrderSet().isEmpty()) {
-                        //如果删除订单后，此价格位没有订单，则删除此价格位
-                        relatedOrders.remove(priceBook.getPrice());
-                    }else {
-                        priceBook.setReallyVolume(priceBook.getReallyVolume() - (order.getVolume() - order.getTradedVolume()));
-                    }
-                }
+        OrderNode node = cacheOrderMap.remove(order.getOrderId());
+        if(node == null) return;
+
+        int idx = order.getInstrumentIndex();
+        ExOrderBook exOrderBook = exOrderBooks[idx];
+        if(exOrderBook == null || exOrderBook.getOrderBook() == null) return;
+
+        TreeMap<Long, PriceBook> relatedOrders;
+        OrderBook orderBook = exOrderBook.getOrderBook();
+        if(order.getDirection() == DirectionType.DT_BUY){
+            relatedOrders = orderBook.getBuyOrders();
+        }else {
+            relatedOrders = orderBook.getSellOrders();
+        }
+        PriceBook priceBook = relatedOrders.get(order.getComPrice());
+        if(priceBook != null) {
+            priceBook.getOrders().remove(node);
+            if (priceBook.getOrders().isEmpty()) {
+                relatedOrders.remove(priceBook.getPrice());
+            }else {
+                priceBook.setReallyVolume(priceBook.getReallyVolume() - (order.getVolume() - order.getTradedVolume()));
             }
         }
+        nodePool.release(node);
     }
 
-    void removeOrderFromCacheOrderMap(Order order){
-        cacheOrderMap.remove(order.getOrderId());
+    ExOrderBook getExOrderBook(int instrumentIndex){
+        return exOrderBooks[instrumentIndex];
     }
 
-    ExOrderBook getExOrderBook(String instrumentId){
-        return exOrderBookMap.get(instrumentId);
-    }
-
-    TreeMap<Long, PriceBook> getPartyOrders(String instrumentId, DirectionType direction){
-        ExOrderBook exOrderBook = exOrderBookMap.get(instrumentId);
-        if(exOrderBook == null){
+    TreeMap<Long, PriceBook> getPartyOrders(int instrumentIndex, DirectionType direction){
+        ExOrderBook exOrderBook = exOrderBooks[instrumentIndex];
+        if(exOrderBook == null || exOrderBook.getOrderBook() == null){
             return null;
         }
         if(direction == DirectionType.DT_BUY){
             return exOrderBook.getOrderBook().getSellOrders();
         }else {
             return exOrderBook.getOrderBook().getBuyOrders();
+        }
+    }
+
+    void updatePriceBookVolume(Order order, long volumeDelta){
+        ExOrderBook exOrderBook = exOrderBooks[order.getInstrumentIndex()];
+        if(exOrderBook == null || exOrderBook.getOrderBook() == null) return;
+        TreeMap<Long, PriceBook> relatedOrders;
+        if(order.getDirection() == DirectionType.DT_BUY){
+            relatedOrders = exOrderBook.getOrderBook().getBuyOrders();
+        }else {
+            relatedOrders = exOrderBook.getOrderBook().getSellOrders();
+        }
+        PriceBook priceBook = relatedOrders.get(order.getComPrice());
+        if(priceBook != null){
+            priceBook.setReallyVolume(priceBook.getReallyVolume() + volumeDelta);
         }
     }
 
